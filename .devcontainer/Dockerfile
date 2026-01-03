@@ -227,6 +227,8 @@ RUN <<EOT bash
 
   # Remove imagemagick due to https://security-tracker.debian.org/tracker/CVE-2019-10131
   apt-get purge -y imagemagick imagemagick-6-common imagemagick-7-common
+  # Remove python3 to avoid conflicts with /opt/venv
+  apt-get purge -y python3
   apt-get auto-remove -y
 
   # --- Locale ---
