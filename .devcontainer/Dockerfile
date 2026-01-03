@@ -200,7 +200,6 @@ RUN <<EOT bash
     gnupg2 \
     gosu \
     gpgv \
-    httpie \
     iputils-ping \
     less \
     libicu76 \
