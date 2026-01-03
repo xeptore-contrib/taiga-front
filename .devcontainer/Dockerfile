@@ -143,7 +143,7 @@ RUN <<EOT bash
   file /opt/git/bin/git
 EOT
 
-FROM docker.io/library/ubuntu:24.04 AS devcontainer
+FROM docker.io/library/python:3.11-trixie AS devcontainer
 
 ENV DEBIAN_FRONTEND=noninteractive
 ARG USER_UID
@@ -220,6 +220,14 @@ RUN <<EOT bash
     wget \
     xz-utils \
     zip
+
+  python -m venv /opt/venv
+  PATH="/opt/venv/bin:$PATH"
+  pip3 install --upgrade --no-cache-dir --root-user-action=ignore pip==25.3 setuptools==80.9.0 gitpython==3.1.46
+
+  # Remove imagemagick due to https://security-tracker.debian.org/tracker/CVE-2019-10131
+  apt-get purge -y imagemagick imagemagick-6-common imagemagick-7-common
+  apt-get auto-remove -y
 
   # --- Locale ---
   localedef -i en_US -c -f UTF-8 en_US.UTF-8
@@ -328,7 +336,7 @@ RUN <<EOT bash
   rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 EOT
 
-ENV LANG=en_US.utf8 LC_ALL=en_US.utf8 PATH="$PATH:/opt/node/bin:/opt/git/bin"
+ENV LANG=en_US.utf8 LC_ALL=en_US.utf8 PATH="/opt/venv/bin:$PATH:/opt/node/bin:/opt/git/bin"
 
 COPY --chown=vscode:vscode --from=git-build /opt/git/share/bash-completion/completions/git /home/vscode/.local/share/bash-completion/completions/git.bash
 COPY --chown=root:root --from=git-build /opt/git /opt/git
