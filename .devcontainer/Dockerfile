@@ -325,7 +325,7 @@ RUN <<EOT bash
   gosu vscode env --chdir=/home/vscode bash -c 'npm completion bash > /home/vscode/.local/share/bash-completion/completions/npm.bash'
 
   # --- Cleanup ---
-  apt-get purge -y gosu
+  apt-get purge -y gosu git git-man
   apt-get autoremove -y
   apt-get clean
   rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
