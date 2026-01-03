@@ -205,6 +205,7 @@ RUN <<EOT bash
     less \
     libicu76 \
     locales \
+    lsb-release \
     nano \
     net-tools \
     netcat-openbsd \
@@ -213,7 +214,6 @@ RUN <<EOT bash
     procps \
     ripgrep \
     sed \
-    lsb-release \
     tree \
     unzip \
     util-linux \
