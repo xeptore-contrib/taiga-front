@@ -102,7 +102,7 @@
   "workspaceFolder": "/workspaces/taiga-front",
   "portsAttributes": {
     "9001": {
-      "label": "Taiga Frontend",
+      "label": "Dev Server",
       "onAutoForward": "openBrowser",
       "elevateIfNeeded": false,
       "protocol": "http",
