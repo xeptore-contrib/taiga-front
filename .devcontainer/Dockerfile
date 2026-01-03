@@ -204,7 +204,6 @@ RUN <<EOT bash
     less \
     libicu76 \
     locales \
-    lsb-release \
     nano \
     net-tools \
     netcat-openbsd \
