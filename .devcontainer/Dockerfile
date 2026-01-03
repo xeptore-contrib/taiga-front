@@ -199,10 +199,11 @@ RUN <<EOT bash
     fzf \
     gnupg2 \
     gosu \
+    gpgv \
     httpie \
     iputils-ping \
     less \
-    libicu74 \
+    libicu76 \
     locales \
     nano \
     net-tools \
@@ -212,7 +213,7 @@ RUN <<EOT bash
     procps \
     ripgrep \
     sed \
-    software-properties-common \
+    lsb-release \
     tree \
     unzip \
     util-linux \
@@ -222,7 +223,8 @@ RUN <<EOT bash
     zip
 
   python -m venv /opt/venv
-  PATH="/opt/venv/bin:$PATH"
+  PATH="/opt/venv/bin:\$PATH"
+  echo "PATH=\$PATH"
   pip3 install --upgrade --no-cache-dir --root-user-action=ignore pip==25.3 setuptools==80.9.0 gitpython==3.1.46
 
   # Remove imagemagick due to https://security-tracker.debian.org/tracker/CVE-2019-10131
@@ -235,18 +237,11 @@ RUN <<EOT bash
   update-ca-certificates
 
   # --- User ---
-  if [ '1000' = "${USER_UID}" ]; then
-    usermod -l vscode ubuntu
-    groupmod -n vscode ubuntu
-    usermod -d /home/vscode -m vscode
-    usermod -G vscode vscode
-  else
-    groupadd --gid "${USER_GID}" vscode
-    useradd -m -u "${USER_UID}" -g "${USER_GID}" -s /bin/bash vscode
-  fi
+  groupadd --gid "${USER_GID}" vscode
+  useradd -m -u "${USER_UID}" -g "${USER_GID}" -s /bin/bash vscode
 
   # --- Bash completions dir ---
-  gosu vscode env --chdir=/home/vscode bash -lc 'mkdir -p /home/vscode/.local/share/bash-completion/completions'
+  gosu vscode env --chdir=/home/vscode bash -c 'mkdir -p /home/vscode/.local/share/bash-completion/completions'
 
   # --- Install dust ---
   case "${TARGETARCH}" in
@@ -325,9 +320,9 @@ RUN <<EOT bash
   rm /tmp/nodejs-keyring.kbx SHASUMS256.txt.asc SHASUMS256.txt "node-${NODE_VERSION}-linux-\$NODE_ARCH.tar.xz"
   PATH="\$PATH:/opt/node/bin"
   gosu vscode node --version
-  gosu vscode env --chdir=/home/vscode bash -lc 'node --completion-bash > /home/vscode/.local/share/bash-completion/completions/node.bash'
+  gosu vscode env --chdir=/home/vscode bash -c 'node --completion-bash > /home/vscode/.local/share/bash-completion/completions/node.bash'
   gosu vscode npm --version
-  gosu vscode env --chdir=/home/vscode bash -lc 'npm completion bash > /home/vscode/.local/share/bash-completion/completions/npm.bash'
+  gosu vscode env --chdir=/home/vscode bash -c 'npm completion bash > /home/vscode/.local/share/bash-completion/completions/npm.bash'
 
   # --- Cleanup ---
   apt-get purge -y gosu
@@ -343,4 +338,4 @@ COPY --chown=root:root --from=git-build /opt/git /opt/git
 RUN git --version
 
 USER vscode
-WORKDIR /workspaces/taiga-front-next
+WORKDIR /workspaces/taiga-front

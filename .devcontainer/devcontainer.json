@@ -60,12 +60,6 @@
           "**/build/**": true
         },
         "eslint.run": "onType",
-        "eslint.validate": [
-          "javascript",
-          "javascriptreact",
-          "typescript",
-          "typescriptreact"
-        ],
         "problems.showCurrentInStatus": true,
         "terminal.integrated.defaultProfile.linux": "bash",
         "terminal.integrated.scrollback": 20000,
@@ -92,10 +86,10 @@
         "amodio.tsl-problem-matcher",
         "EditorConfig.EditorConfig",
         "esbenp.prettier-vscode",
-        "jeremyrajan.webpack",
         "mkloubert.vscode-easy-coffeescript",
         "ms-azuretools.vscode-containers",
         "ms-azuretools.vscode-docker",
+        "nickdodd79.gulptasks",
         "Orta.vscode-jest",
         "streetsidesoftware.code-spell-checker-persian",
         "streetsidesoftware.code-spell-checker"
@@ -105,18 +99,15 @@
   "postCreateCommand": {},
   "workspaceMount": "type=bind,source=${localWorkspaceFolder},destination=/workspaces/taiga-front",
   "workspaceFolder": "/workspaces/taiga-front",
-	"forwardPorts": [
-		"9001:9001"
-	],
-	"portsAttributes": {
-		"9001": {
-			"label": "Taiga Frontend",
-			"onAutoForward": "openBrowser",
-			"elevateIfNeeded": false,
-			"protocol": "http",
-			"requireLocalPort": false
-		}
-	},
+  "portsAttributes": {
+    "9001": {
+      "label": "Taiga Frontend",
+      "onAutoForward": "openBrowser",
+      "elevateIfNeeded": false,
+      "protocol": "http",
+      "requireLocalPort": true
+    }
+  },
   "privileged": false,
   "containerUser": "vscode",
   "remoteUser": "vscode"
