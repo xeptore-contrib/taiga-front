@@ -173,8 +173,18 @@ ARG JQ_VERSION
 ARG JQ_SHA256_AMD64
 # jq-linux-arm64
 ARG JQ_SHA256_ARM64
+# https://github.com/eza-community/eza/releases
+ARG EZA_VERSION
+# eza_x86_64-unknown-linux-gnu.tar.gz
+ARG EZA_SHA256_AMD64
+# eza_aarch64-unknown-linux-gnu.tar.gz
+ARG EZA_SHA256_ARM64
 # https://nodejs.org/en/download/archive/v16
 ARG NODE_VERSION
+# https://github.com/ohmyzsh/ohmyzsh/commits
+ARG OMZ_COMMIT
+# https://github.com/zsh-users/zsh-autosuggestions/commits
+ARG ZSH_AUTOSUGGESTIONS_COMMIT
 
 WORKDIR /root
 
@@ -187,7 +197,6 @@ RUN <<EOT bash
   apt-get install -y --no-install-recommends \
     apt-transport-https \
     apt-utils \
-    bash-completion \
     btop \
     ca-certificates \
     coreutils \
@@ -218,7 +227,8 @@ RUN <<EOT bash
     vim \
     wget \
     xz-utils \
-    zip
+    zip \
+    zsh
 
   python -m venv /opt/venv
   PATH="/opt/venv/bin:\$PATH"
@@ -236,10 +246,14 @@ RUN <<EOT bash
 
   # --- User ---
   groupadd --gid "${USER_GID}" vscode
-  useradd -m -u "${USER_UID}" -g "${USER_GID}" -s /bin/bash vscode
+  useradd -m -u "${USER_UID}" -g "${USER_GID}" -s /usr/bin/zsh vscode
 
-  # --- Bash completions dir ---
-  gosu vscode env --chdir=/home/vscode bash -c 'mkdir -p /home/vscode/.local/share/bash-completion/completions'
+  # --- zsh ---
+  gosu vscode mkdir -p /home/vscode/.oh-my-zsh
+  gosu vscode bash -c "curl -sSfL https://github.com/ohmyzsh/ohmyzsh/archive/${OMZ_COMMIT}.tar.gz | tar -xzf - --strip-components=1 -C /home/vscode/.oh-my-zsh"
+  gosu vscode mkdir -p /home/vscode/.oh-my-zsh/custom/plugins/zsh-autosuggestions
+  gosu vscode bash -c "curl -sSfL https://github.com/zsh-users/zsh-autosuggestions/archive/${ZSH_AUTOSUGGESTIONS_COMMIT}.tar.gz | tar -xzf - --strip-components=1 -C /home/vscode/.oh-my-zsh/custom/plugins/zsh-autosuggestions"
+  gosu vscode mkdir -p /home/vscode/.oh-my-zsh/completions
 
   # --- Install dust ---
   case "${TARGETARCH}" in
@@ -274,9 +288,8 @@ RUN <<EOT bash
   echo "\${BAT_SHA256}  /root/bat-${BAT_VERSION}-\${BAT_ARCH}-unknown-linux-gnu.tar.gz" | sha256sum
   tar -xzf "/root/bat-${BAT_VERSION}-\${BAT_ARCH}-unknown-linux-gnu.tar.gz" --strip-components=1 -C /tmp/bat "bat-${BAT_VERSION}-\${BAT_ARCH}-unknown-linux-gnu"
   mv /tmp/bat/bat /usr/local/bin/bat
-  mv /tmp/bat/autocomplete/bat.bash /home/vscode/.local/share/bash-completion/completions/bat.bash
+  gosu vscode cp /tmp/bat/autocomplete/bat.zsh /home/vscode/.oh-my-zsh/completions/_bat
   rm -rf /tmp/bat
-  chown vscode:vscode /home/vscode/.local/share/bash-completion/completions/bat.bash
   gosu vscode bat --version
   rm "/root/bat-${BAT_VERSION}-\${BAT_ARCH}-unknown-linux-gnu.tar.gz"
 
@@ -302,6 +315,24 @@ RUN <<EOT bash
   chmod +x /usr/local/bin/yq
   gosu vscode yq --version
 
+  # --- Install eza ---
+  case "${TARGETARCH}" in
+    amd64) EZA_ARCH=x86_64 ;;
+    arm64) EZA_ARCH=aarch64 ;;
+    *) echo "Unsupported target platform architecture: ${TARGETARCH}" >&2; exit 16 ;;
+  esac;
+  curl -fsSLO --tlsv1.3 "https://github.com/eza-community/eza/releases/download/${EZA_VERSION}/eza_\${EZA_ARCH}-unknown-linux-gnu.tar.gz"
+  case "${TARGETARCH}" in
+    amd64) EZA_SHA256=${EZA_SHA256_AMD64} ;;
+    arm64) EZA_SHA256=${EZA_SHA256_ARM64} ;;
+    *) echo "Unsupported target platform architecture: ${TARGETARCH}" >&2; exit 16 ;;
+  esac;
+  echo "\${EZA_SHA256}  /root/eza_\${EZA_ARCH}-unknown-linux-gnu.tar.gz" | sha256sum
+  tar -xzf "/root/eza_\${EZA_ARCH}-unknown-linux-gnu.tar.gz" --strip-components=1 -C /usr/local/bin/ ./eza
+  gosu vscode eza --version
+  rm "/root/eza_\${EZA_ARCH}-unknown-linux-gnu.tar.gz"
+  gosu vscode curl -fsSL --tlsv1.3 "https://raw.githubusercontent.com/eza-community/eza/refs/tags/${EZA_VERSION}/completions/zsh/_eza" -o /home/vscode/.oh-my-zsh/completions/_eza
+
   # --- Install Node ---
   case "${TARGETARCH}" in
     amd64) NODE_ARCH=x64 ;;
@@ -318,9 +349,8 @@ RUN <<EOT bash
   rm /tmp/nodejs-keyring.kbx SHASUMS256.txt.asc SHASUMS256.txt "node-${NODE_VERSION}-linux-\$NODE_ARCH.tar.xz"
   PATH="\$PATH:/opt/node/bin"
   gosu vscode node --version
-  gosu vscode env --chdir=/home/vscode bash -c 'node --completion-bash > /home/vscode/.local/share/bash-completion/completions/node.bash'
   gosu vscode npm --version
-  gosu vscode env --chdir=/home/vscode bash -c 'npm completion bash > /home/vscode/.local/share/bash-completion/completions/npm.bash'
+  gosu vscode env --chdir=/home/vscode zsh -c 'npm completion zsh > /home/vscode/.oh-my-zsh/completions/_npm'
 
   # --- Cleanup ---
   apt-get purge -y gosu git git-man
@@ -331,7 +361,8 @@ EOT
 
 ENV LANG=en_US.utf8 LC_ALL=en_US.utf8 PATH="/opt/venv/bin:$PATH:/opt/node/bin:/opt/git/bin"
 
-COPY --chown=vscode:vscode --from=git-build /opt/git/share/bash-completion/completions/git /home/vscode/.local/share/bash-completion/completions/git.bash
+COPY --chown=vscode:vscode .zshrc /home/vscode/.zshrc
+
 COPY --chown=root:root --from=git-build /opt/git /opt/git
 RUN git --version
 
